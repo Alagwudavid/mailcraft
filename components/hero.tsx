@@ -15,7 +15,7 @@ export function Hero() {
 
           <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-6xl md:text-7xl text-foreground">
             Design and manage your{" "}
-            <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="bg-clip-text text-[#8ddeed]">
               email templates
             </span>{" "}
             visually
