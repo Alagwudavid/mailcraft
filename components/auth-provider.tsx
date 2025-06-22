@@ -56,20 +56,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
-  const fetchProfile = async (userId: string): Promise<Profile | null> => {
-    try {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
+  const fetchProfile = async (userId: string, retries = 3): Promise<Profile | null> => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
-      if (error) {
-        console.error("Error fetching profile:", error)
-        return null
+        if (data && !error) {
+          return data
+        }
+
+        if (error && error.code !== "PGRST116") {
+          // PGRST116 is "not found", other errors should be logged
+          console.error(`Error fetching profile (attempt ${i + 1}):`, error)
+        }
+
+        // Wait before retrying
+        if (i < retries - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)))
+        }
+      } catch (error) {
+        console.error(`Error in fetchProfile (attempt ${i + 1}):`, error)
       }
-
-      return data
-    } catch (error) {
-      console.error("Error in fetchProfile:", error)
-      return null
     }
+    return null
   }
 
   const createProfile = async (userId: string): Promise<Profile | null> => {
@@ -84,9 +93,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select()
         .single()
 
-      if (error) {
-        console.error("Error creating profile:", error)
-        // Try with timestamp suffix if username conflict
+      if (data && !error) {
+        return data
+      }
+
+      // If username conflict, try with timestamp
+      if (error?.code === "23505") {
         const fallbackUsername = `${username}-${Date.now()}`
         const { data: fallbackData, error: fallbackError } = await supabase
           .from("profiles")
@@ -97,31 +109,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .select()
           .single()
 
-        if (fallbackError) {
-          console.error("Error creating fallback profile:", fallbackError)
-          return null
+        if (fallbackData && !fallbackError) {
+          return fallbackData
         }
-        return fallbackData
+        console.error("Error creating fallback profile:", fallbackError)
+      } else {
+        console.error("Error creating profile:", error)
       }
-
-      return data
     } catch (error) {
       console.error("Error in createProfile:", error)
-      return null
     }
+    return null
   }
 
   const refreshProfile = async () => {
     if (!user) return
 
-    let userProfile = await fetchProfile(user.id)
+    setLoading(true)
+    try {
+      let userProfile = await fetchProfile(user.id)
 
-    // If no profile exists, try to create one
-    if (!userProfile) {
-      userProfile = await createProfile(user.id)
+      // If no profile exists, try to create one
+      if (!userProfile) {
+        console.log("No profile found, creating one...")
+        userProfile = await createProfile(user.id)
+      }
+
+      setProfile(userProfile)
+    } catch (error) {
+      console.error("Error in refreshProfile:", error)
+    } finally {
+      setLoading(false)
     }
-
-    setProfile(userProfile)
   }
 
   useEffect(() => {
@@ -135,10 +154,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (user) {
           await refreshProfile()
+        } else {
+          setLoading(false)
         }
       } catch (error) {
         console.error("Error getting user:", error)
-      } finally {
         setLoading(false)
       }
     }
@@ -148,18 +168,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session?.user?.id)
       setUser(session?.user ?? null)
 
       if (session?.user) {
-        // Small delay to allow database trigger to complete
+        // Give database trigger time to complete, then refresh
         setTimeout(async () => {
           await refreshProfile()
-        }, 1000)
+        }, 2000)
       } else {
         setProfile(null)
+        setLoading(false)
       }
-
-      setLoading(false)
     })
 
     return () => subscription.unsubscribe()
