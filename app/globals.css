@@ -25,29 +25,49 @@
     --input: 0 0% 100%; /* #ffffff */
     --ring: 264 78% 56%; /* #7037e4 */
     --radius: 0.5rem;
+
+    /* Sidebar variables */
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
     /* Dark theme: #030318, #7037e4, #8ddeed, #0d1117, #fafafa */
     --background: 3 3 24; /* #030318 */
     --foreground: 250 250 250; /* #fafafa */
-    --card: 210 13% 9%; /* #0d1117 */
+    --card: 13 17 23; /* #0d1117 */
     --card-foreground: 250 250 250; /* #fafafa */
-    --popover: 210 13% 9%; /* #0d1117 */
+    --popover: 13 17 23; /* #0d1117 */
     --popover-foreground: 250 250 250; /* #fafafa */
     --primary: 264 78% 56%; /* #7037e4 */
     --primary-foreground: 250 250 250; /* #fafafa */
     --secondary: 185 78% 74%; /* #8ddeed */
     --secondary-foreground: 3 3 24; /* #030318 */
-    --muted: 210 13% 9%; /* #0d1117 */
+    --muted: 13 17 23; /* #0d1117 */
     --muted-foreground: 250 250 250; /* #fafafa */
     --accent: 185 78% 74%; /* #8ddeed */
     --accent-foreground: 3 3 24; /* #030318 */
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 250 250 250; /* #fafafa */
-    --border: 210 13% 9%; /* #0d1117 */
-    --input: 210 13% 9%; /* #0d1117 */
+    --border: 13 17 23; /* #0d1117 */
+    --input: 13 17 23; /* #0d1117 */
     --ring: 185 78% 74%; /* #8ddeed */
+
+    /* Dark sidebar variables */
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -57,5 +77,12 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
   }
 }
