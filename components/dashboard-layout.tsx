@@ -31,7 +31,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { signOut } from "next-auth/react" // Import signOut from next-auth/react
+import { createClient } from "@/lib/supabase/client"
 
 const navigation = [
   { name: "Projects", href: "/dashboard", icon: FolderOpen },
@@ -116,7 +116,14 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                 Refresh Profile
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => signOut()} className="text-destructive hover:bg-destructive/10">
+              <DropdownMenuItem
+                onClick={async () => {
+                  const supabase = createClient()
+                  await supabase.auth.signOut()
+                  window.location.href = "/auth/signin"
+                }}
+                className="text-destructive hover:bg-destructive/10"
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
               </DropdownMenuItem>
