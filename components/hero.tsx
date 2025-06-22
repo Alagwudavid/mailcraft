@@ -5,7 +5,7 @@ import { ArrowRight, Sparkles } from "lucide-react"
 export function Hero() {
   return (
     <section className="relative py-20 md:py-32 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10" />
+      <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-secondary/10" />
       <div className="container relative">
         <div className="mx-auto max-w-4xl text-center">
           <div className="mb-8 inline-flex items-center rounded-full border border-primary/30 bg-primary/10 px-4 py-2 text-sm">
@@ -15,7 +15,7 @@ export function Hero() {
 
           <h1 className="mb-6 text-4xl font-bold tracking-tight sm:text-6xl md:text-7xl text-foreground">
             Design and manage your{" "}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-primary to-secondary bg-clip-text text-transparent">
               email templates
             </span>{" "}
             visually

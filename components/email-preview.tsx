@@ -63,7 +63,7 @@ export function EmailPreview({ content }: EmailPreviewProps) {
     <div className="h-full overflow-auto">
       <div className="p-6">
         <div className="mx-auto max-w-md">
-          <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-card border border-border rounded-lg shadow-xs overflow-hidden">
             {blocks.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground">
                 <p>Your email preview will appear here</p>

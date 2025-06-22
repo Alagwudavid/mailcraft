@@ -81,7 +81,7 @@ export function TemplateEditor({ template, onSave }: TemplateEditorProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+      <header className="border-b bg-card/95 backdrop-blur-sm supports-backdrop-filter:bg-card/60">
         <div className="flex h-16 items-center justify-between px-6">
           <div className="flex items-center space-x-4">
             <Link href="/dashboard">

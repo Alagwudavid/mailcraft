@@ -7,7 +7,7 @@ export function CTA() {
     <section className="py-20 md:py-32">
       <div className="container">
         <div className="mx-auto max-w-4xl text-center">
-          <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-8 md:p-16 text-white">
+          <div className="rounded-2xl bg-linear-to-r from-primary to-secondary p-8 md:p-16 text-white">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4 text-white">
               Ready to transform your email marketing?
             </h2>
