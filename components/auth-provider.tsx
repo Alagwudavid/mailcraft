@@ -17,6 +17,7 @@ interface AuthContextType {
   profile: Profile | null
   loading: boolean
   signOut: () => Promise<void>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   signOut: async () => {},
+  refreshProfile: async () => {},
 })
 
 export const useAuth = () => {
@@ -34,14 +36,17 @@ export const useAuth = () => {
   return context
 }
 
-// Function to generate username on client side as fallback
-function generatePublicUsername(): string {
-  const letters = Array.from({ length: 3 }, () => String.fromCharCode(97 + Math.floor(Math.random() * 26))).join("")
+// Simple username generator for client-side fallback
+function generateUsername(): string {
+  const letters = Array.from({ length: 3 }, () => {
+    const isUpper = Math.random() > 0.5
+    const charCode = isUpper ? 65 + Math.floor(Math.random() * 26) : 97 + Math.floor(Math.random() * 26)
+    return String.fromCharCode(charCode)
+  }).join("")
 
   const numbers = Math.floor(Math.random() * 1000)
     .toString()
     .padStart(3, "0")
-
   return `user-${letters}${numbers}`
 }
 
@@ -51,36 +56,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
-  const fetchOrCreateProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
-      // First, try to get existing profile
-      const { data: existingProfile, error: fetchError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single()
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).single()
 
-      if (existingProfile && !fetchError) {
-        setProfile(existingProfile)
-        return
+      if (error) {
+        console.error("Error fetching profile:", error)
+        return null
       }
 
-      // If no profile exists, create one
-      const newUsername = generatePublicUsername()
-      const { data: newProfile, error: createError } = await supabase
+      return data
+    } catch (error) {
+      console.error("Error in fetchProfile:", error)
+      return null
+    }
+  }
+
+  const createProfile = async (userId: string): Promise<Profile | null> => {
+    try {
+      const username = generateUsername()
+      const { data, error } = await supabase
         .from("profiles")
         .insert({
           id: userId,
-          public_username: newUsername,
+          public_username: username,
         })
         .select()
         .single()
 
-      if (createError) {
-        console.error("Error creating profile:", createError)
-        // Try with a different username if there's a conflict
-        const fallbackUsername = `${newUsername}-${Date.now()}`
-        const { data: fallbackProfile, error: fallbackError } = await supabase
+      if (error) {
+        console.error("Error creating profile:", error)
+        // Try with timestamp suffix if username conflict
+        const fallbackUsername = `${username}-${Date.now()}`
+        const { data: fallbackData, error: fallbackError } = await supabase
           .from("profiles")
           .insert({
             id: userId,
@@ -91,30 +99,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (fallbackError) {
           console.error("Error creating fallback profile:", fallbackError)
-          return
+          return null
         }
-        setProfile(fallbackProfile)
-      } else {
-        setProfile(newProfile)
+        return fallbackData
       }
+
+      return data
     } catch (error) {
-      console.error("Error in fetchOrCreateProfile:", error)
+      console.error("Error in createProfile:", error)
+      return null
     }
+  }
+
+  const refreshProfile = async () => {
+    if (!user) return
+
+    let userProfile = await fetchProfile(user.id)
+
+    // If no profile exists, try to create one
+    if (!userProfile) {
+      userProfile = await createProfile(user.id)
+    }
+
+    setProfile(userProfile)
   }
 
   useEffect(() => {
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
 
-      setUser(user)
+        setUser(user)
 
-      if (user) {
-        await fetchOrCreateProfile(user.id)
+        if (user) {
+          await refreshProfile()
+        }
+      } catch (error) {
+        console.error("Error getting user:", error)
+      } finally {
+        setLoading(false)
       }
-
-      setLoading(false)
     }
 
     getUser()
@@ -125,7 +151,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(session?.user ?? null)
 
       if (session?.user) {
-        await fetchOrCreateProfile(session.user.id)
+        // Small delay to allow database trigger to complete
+        setTimeout(async () => {
+          await refreshProfile()
+        }, 1000)
       } else {
         setProfile(null)
       }
@@ -134,12 +163,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [])
 
   const signOut = async () => {
     await supabase.auth.signOut()
     setProfile(null)
   }
 
-  return <AuthContext.Provider value={{ user, profile, loading, signOut }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, profile, loading, signOut, refreshProfile }}>{children}</AuthContext.Provider>
+  )
 }
